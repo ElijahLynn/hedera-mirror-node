@@ -25,6 +25,7 @@ import com.hedera.mirror.importer.domain.StreamFileData;
 import com.hedera.mirror.importer.domain.StreamFilename;
 import com.hedera.mirror.importer.downloader.CommonDownloaderProperties;
 import com.hedera.mirror.importer.downloader.CommonDownloaderProperties.PathType;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,9 +35,11 @@ import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import software.amazon.awssdk.core.FileTransformerConfiguration;
 import software.amazon.awssdk.core.async.AsyncResponseTransformer;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
 import software.amazon.awssdk.services.s3.model.ListObjectsV2Response;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -109,6 +112,62 @@ public final class S3StreamFileProvider implements StreamFileProvider {
                 .switchIfEmpty(Flux.defer(() -> pathResult.fallback() ? list(node, lastFilename) : Flux.empty()));
     }
 
+    // For PoC
+    public Flux<S3Object> listAllPaginated(ConsensusNode node, StreamFilename lastFilename) {
+        var prefix = getNodeIdPrefix(node, lastFilename.getStreamType());
+        var startAfter = prefix + lastFilename.getFilenameAfter();
+        var bucketName = commonDownloaderProperties.getBucketName();
+
+        var listRequest = ListObjectsV2Request.builder()
+                .bucket(bucketName)
+                .prefix(prefix)
+                .startAfter(startAfter)
+                .delimiter(SEPARATOR)
+                .requestPayer(RequestPayer.REQUESTER)
+                .build();
+
+        return Flux.from(s3Client.listObjectsV2Paginator(listRequest))
+                .timeout(commonDownloaderProperties.getTimeout())
+                .doOnNext(r -> {
+                    if (log.isDebugEnabled()) {
+                        var contents = r.contents();
+                        if (contents.isEmpty()) {
+                            log.debug("Next batch of s3 objects is empty");
+                        } else {
+                            log.debug(
+                                    "Next batch of {} s3 objects, starting with: {}",
+                                    contents.size(),
+                                    contents.get(0).key());
+                        }
+                    }
+                })
+                .flatMapIterable(ListObjectsV2Response::contents)
+                .doOnSubscribe(s -> log.debug("Listing files from bucket {} after {}", bucketName, startAfter));
+    }
+
+    // For PoC
+    public Mono<GetObjectResponse> get(S3Object s3Object, Path downloadBase) {
+        var s3Key = s3Object.key();
+        log.debug("Starting download of {} to {}", s3Key, downloadBase);
+
+        var request = GetObjectRequest.builder()
+                .bucket(commonDownloaderProperties.getBucketName())
+                .key(s3Key)
+                .requestPayer(RequestPayer.REQUESTER)
+                .build();
+
+        var downloadPath = downloadBase.resolve(s3Key);
+        var responseFuture = s3Client.getObject(
+                request,
+                AsyncResponseTransformer.toFile(
+                        downloadPath, FileTransformerConfiguration.defaultCreateOrReplaceExisting()));
+
+        return Mono.fromFuture(responseFuture)
+                .timeout(commonDownloaderProperties.getTimeout())
+                .onErrorMap(NoSuchKeyException.class, TransientProviderException::new)
+                .doOnSuccess(s -> log.debug("Finished downloading {} to {}", s3Key, downloadBase));
+    }
+
     private String getAccountIdPrefix(PathKey key) {
         var streamType = key.type();
         var nodeAccount = key.node().getNodeAccountId().toString();
@@ -116,10 +175,14 @@ public final class S3StreamFileProvider implements StreamFileProvider {
     }
 
     private String getNodeIdPrefix(PathKey key) {
+        return getNodeIdPrefix(key.node(), key.type());
+    }
+
+    private String getNodeIdPrefix(ConsensusNode node, StreamType streamType) {
         var network = commonDownloaderProperties.getMirrorProperties().getNetwork();
         var shard = commonDownloaderProperties.getMirrorProperties().getShard();
-        var streamFolder = key.type().getNodeIdBasedSuffix();
-        return TEMPLATE_NODE_ID_PREFIX.formatted(network, shard, key.node().getNodeId(), streamFolder);
+        var streamFolder = streamType.getNodeIdBasedSuffix();
+        return TEMPLATE_NODE_ID_PREFIX.formatted(network, shard, node.getNodeId(), streamFolder);
     }
 
     private String getPrefix(PathKey key, PathType pathType) {
