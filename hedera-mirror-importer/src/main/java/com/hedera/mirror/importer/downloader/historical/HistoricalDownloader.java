@@ -24,7 +24,6 @@ import com.hedera.mirror.importer.addressbook.ConsensusNode;
 import com.hedera.mirror.importer.addressbook.ConsensusNodeService;
 import com.hedera.mirror.importer.domain.StreamFilename;
 import com.hedera.mirror.importer.downloader.DownloaderProperties;
-import com.hedera.mirror.importer.downloader.provider.S3StreamFileProvider;
 import com.hedera.mirror.importer.downloader.provider.StreamFileProvider;
 import com.hedera.mirror.importer.leader.Leader;
 import jakarta.inject.Named;
@@ -54,7 +53,7 @@ public class HistoricalDownloader {
     private final Path downloadPath;
     private final DownloaderProperties downloaderProperties;
     private final ExecutorService executorService = Executors.newFixedThreadPool(100);
-    private final S3StreamFileProvider streamFileProvider;
+    private final StreamFileProvider streamFileProvider;
     private final StreamType streamType;
     private final Multimap<String, GetObjectResponse> downloadsMap =
             MultimapBuilder.linkedHashKeys().hashSetValues().build();
@@ -67,7 +66,7 @@ public class HistoricalDownloader {
 
         this.consensusNodeService = consensusNodeService;
         this.downloaderProperties = downloaderProperties;
-        this.streamFileProvider = (S3StreamFileProvider) streamFileProvider; // A bit of a hack
+        this.streamFileProvider = streamFileProvider;
         this.streamType = downloaderProperties.getStreamType();
         this.downloadPath = downloaderProperties.getMirrorProperties().getDownloadPath();
     }
@@ -115,8 +114,9 @@ public class HistoricalDownloader {
                                     .flatMap(
                                             s3Object -> streamFileProvider.get(s3Object, downloadPath),
                                             downloadConcurrency)
-                                    .doOnNext(response -> {
-                                        var s3Basename = s3Basename(response);
+                                    .doOnNext(responseWithKey -> {
+                                        var response = responseWithKey.getObjectResponse();
+                                        var s3Basename = s3Basename(responseWithKey.s3Key());
                                         downloadsMap.put(s3Basename, response);
                                         log.debug(
                                                 "Download completed for node: {}, filename: {}, size: {}",
@@ -148,6 +148,12 @@ public class HistoricalDownloader {
         // Also, as the address book grows, the number needed to reach 1/3 stake also increases and download
         // tasks need to be added to harvest those signature files.
 
+        try {
+            Thread.sleep(600000L);
+        } catch (InterruptedException e) {
+            log.info("Sleep interrupted");
+            Thread.currentThread().interrupt();
+        }
         executorService.shutdownNow();
     }
 
@@ -192,11 +198,6 @@ public class HistoricalDownloader {
     }
 
     public record ConsensusNodeInfo(List<ConsensusNode> nodes, int nextIndex) {}
-
-    private static String s3Basename(GetObjectResponse response) {
-        String s3Key = response.metadata().get("filename");
-        return s3Basename(s3Key);
-    }
 
     private static String s3Basename(String s3Key) {
         var lastSeparatorIndex = s3Key.lastIndexOf(SEPARATOR);
