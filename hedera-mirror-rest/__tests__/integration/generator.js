@@ -17,7 +17,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import {getModuleDirname} from '../testutils';
+import {getModuleDirname} from '../testutils.js';
 
 const mark = '$$GROUP_SPEC_PATH$$';
 

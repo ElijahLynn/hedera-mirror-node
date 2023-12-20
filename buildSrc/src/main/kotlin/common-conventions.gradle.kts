@@ -63,7 +63,7 @@ dependencyCheck {
 // Spotless uses Prettier and it requires Node.js
 node {
     download = true
-    version = "18.18.0"
+    version = "21.0.0"
     workDir = rootDir.resolve(".gradle").resolve("nodejs")
 }
 
