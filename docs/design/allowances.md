@@ -255,7 +255,9 @@ Optional Filters
       }
     }
   ],
-  "links": {}
+  "links": {
+    "next": "/api/v1/accounts/0.0.1000/allowances/nfts?limit=2&order=desc&token.id=gte:0.0.1034&account.id=gt:9857"
+  }
 }
 ```
 
