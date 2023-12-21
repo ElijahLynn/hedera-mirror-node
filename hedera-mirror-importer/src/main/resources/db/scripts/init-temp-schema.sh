@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 TEMP_SCHEMA="${HEDERA_MIRROR_IMPORTER_DB_TEMPSCHEMA:-temporary}"
-SCHEMA_EXISTS="$(psql -d "user=postgres connect_timeout=3" \
+SCHEMA_EXISTS=$(psql -d "user=postgres connect_timeout=3" \
                   -XAt \
-                  -c "select exists (select schema_name from information_schema.schemata where schema_name = 'temporary')")"
+                  -c "select exists (select schema_name from information_schema.schemata where schema_name = 'temporary')")
 
 echo "The schema exists value is $SCHEMA_EXISTS"
 
