@@ -41,7 +41,6 @@ repositories {
     maven {
         url = uri("https://artifacts.consensys.net/public/maven/maven/")
     }
-    maven { url = uri("https://repo.spring.io/milestone") }
 }
 
 dependencyManagement {
@@ -60,18 +59,19 @@ dependencies {
 
 tasks.compileJava {
     dependsOn("generateEffectiveLombokConfig")
-    options.compilerArgs.addAll(listOf("-Werror", "-Xlint:all"))
+    // Disable serial and this-escape warnings due to errors in generated code
+    options.compilerArgs.addAll(listOf("-Werror", "-Xlint:all", "-Xlint:-serial,-this-escape"))
     options.encoding = "UTF-8"
-    sourceCompatibility = "17"
-    targetCompatibility = "17"
+    sourceCompatibility = "21"
+    targetCompatibility = "21"
 }
 
 tasks.compileTestJava {
     dependsOn("generateEffectiveLombokConfig")
-    options.compilerArgs.addAll(listOf("-Werror", "-Xlint:all"))
+    options.compilerArgs.addAll(listOf("-Werror", "-Xlint:all", "-Xlint:-this-escape"))
     options.encoding = "UTF-8"
-    sourceCompatibility = "17"
-    targetCompatibility = "17"
+    sourceCompatibility = "21"
+    targetCompatibility = "21"
 }
 
 tasks.javadoc {
@@ -82,6 +82,8 @@ tasks.test {
     finalizedBy(tasks.jacocoTestReport)
     maxHeapSize = "4096m"
     minHeapSize = "1024m"
+    systemProperty("user.timezone", "UTC")
+    systemProperty("spring.test.constructor.autowire.mode", "ALL")
     if (System.getenv().containsKey("CI")) {
         retry {
             maxRetries = 3

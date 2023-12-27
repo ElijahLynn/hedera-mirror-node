@@ -19,16 +19,19 @@ package com.hedera.mirror.importer.migration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.hedera.mirror.common.domain.balance.AccountBalanceFile;
+import com.hedera.mirror.common.domain.entity.Entity;
 import com.hedera.mirror.common.domain.transaction.CryptoTransfer;
 import com.hedera.mirror.common.domain.transaction.ErrataType;
 import com.hedera.mirror.common.domain.transaction.Transaction;
 import com.hedera.mirror.common.domain.transaction.TransactionType;
 import com.hedera.mirror.common.util.DomainUtils;
-import com.hedera.mirror.importer.IntegrationTest;
-import com.hedera.mirror.importer.MirrorProperties;
+import com.hedera.mirror.importer.ImporterIntegrationTest;
+import com.hedera.mirror.importer.ImporterProperties;
+import com.hedera.mirror.importer.parser.record.entity.EntityProperties;
 import com.hedera.mirror.importer.repository.AccountBalanceFileRepository;
 import com.hedera.mirror.importer.repository.ContractResultRepository;
 import com.hedera.mirror.importer.repository.CryptoTransferRepository;
+import com.hedera.mirror.importer.repository.EntityRepository;
 import com.hedera.mirror.importer.repository.TokenTransferRepository;
 import com.hedera.mirror.importer.repository.TransactionRepository;
 import com.hedera.mirror.importer.util.Utility;
@@ -41,12 +44,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 
 @SuppressWarnings("java:S5786")
-@RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@RequiredArgsConstructor
 @Tag("migration")
-public class ErrataMigrationTest extends IntegrationTest {
+public class ErrataMigrationTest extends ImporterIntegrationTest {
 
     public static final long BAD_TIMESTAMP1 = 1568415600193620000L;
     private static final long BAD_TIMESTAMP2 = 1568528100472477002L;
@@ -71,21 +73,23 @@ public class ErrataMigrationTest extends IntegrationTest {
     private final AccountBalanceFileRepository accountBalanceFileRepository;
     private final ContractResultRepository contractResultRepository;
     private final CryptoTransferRepository cryptoTransferRepository;
+    private final EntityProperties entityProperties;
+    private final EntityRepository entityRepository;
     private final TokenTransferRepository tokenTransferRepository;
     private final ErrataMigration errataMigration;
-    private final MirrorProperties mirrorProperties;
+    private final ImporterProperties importerProperties;
     private final TransactionRepository transactionRepository;
 
     @BeforeEach
     void setup() {
-        mirrorProperties.setNetwork(MirrorProperties.HederaNetwork.MAINNET);
+        importerProperties.setNetwork(ImporterProperties.HederaNetwork.MAINNET);
     }
 
     @AfterEach
     void teardown() {
-        mirrorProperties.setEndDate(Utility.MAX_INSTANT_LONG);
-        mirrorProperties.setNetwork(MirrorProperties.HederaNetwork.TESTNET);
-        mirrorProperties.setStartDate(Instant.EPOCH);
+        importerProperties.setEndDate(Utility.MAX_INSTANT_LONG);
+        importerProperties.setNetwork(ImporterProperties.HederaNetwork.TESTNET);
+        importerProperties.setStartDate(Instant.EPOCH);
     }
 
     @Test
@@ -95,7 +99,7 @@ public class ErrataMigrationTest extends IntegrationTest {
 
     @Test
     void migrateNotMainnet() throws Exception {
-        mirrorProperties.setNetwork(MirrorProperties.HederaNetwork.TESTNET);
+        importerProperties.setNetwork(ImporterProperties.HederaNetwork.TESTNET);
         domainBuilder.accountBalanceFile().persist();
         domainBuilder
                 .accountBalanceFile()
@@ -111,19 +115,29 @@ public class ErrataMigrationTest extends IntegrationTest {
         assertErrataTransactions(ErrataType.INSERT, 0);
         assertErrataTransactions(ErrataType.DELETE, 0);
         assertThat(contractResultRepository.count()).isZero();
+        assertThat(entityRepository.count()).isZero();
+        assertThat(findHistory(Entity.class)).isEmpty();
+
+        assertThat(entityProperties.getPersist().isEntityHistory()).isTrue();
+        assertThat(entityProperties.getPersist().isTrackBalance()).isTrue();
     }
 
     @Test
     void migrateOutsideDateRange() throws Exception {
         Instant now = Instant.now();
-        mirrorProperties.setStartDate(now);
-        mirrorProperties.setEndDate(now.plusSeconds(1L));
+        importerProperties.setStartDate(now);
+        importerProperties.setEndDate(now.plusSeconds(1L));
 
         errataMigration.doMigrate();
 
         assertErrataTransfers(ErrataType.INSERT, 0);
         assertErrataTransactions(ErrataType.INSERT, 0);
         assertThat(contractResultRepository.count()).isZero();
+        assertThat(entityRepository.count()).isZero();
+        assertThat(findHistory(Entity.class)).isEmpty();
+
+        assertThat(entityProperties.getPersist().isEntityHistory()).isTrue();
+        assertThat(entityProperties.getPersist().isTrackBalance()).isTrue();
     }
 
     @Test
@@ -152,6 +166,8 @@ public class ErrataMigrationTest extends IntegrationTest {
 
         assertBalanceOffsets(EXPECTED_ACCOUNT_BALANCE_FILES);
         assertThat(contractResultRepository.count()).isEqualTo(13L);
+        assertThat(entityRepository.count()).isZero();
+        assertThat(findHistory(Entity.class)).isEmpty();
         assertThat(tokenTransferRepository.count()).isEqualTo(24L);
         assertErrataTransactions(ErrataType.INSERT, 113);
         assertErrataTransactions(ErrataType.DELETE, 0);
@@ -159,6 +175,9 @@ public class ErrataMigrationTest extends IntegrationTest {
         assertErrataTransfers(ErrataType.DELETE, 6)
                 .extracting(CryptoTransfer::getConsensusTimestamp)
                 .containsOnly(1L, 2L, RECEIVER_PAYER_TIMESTAMP);
+
+        assertThat(entityProperties.getPersist().isEntityHistory()).isTrue();
+        assertThat(entityProperties.getPersist().isTrackBalance()).isTrue();
     }
 
     @Test
@@ -178,7 +197,12 @@ public class ErrataMigrationTest extends IntegrationTest {
         assertErrataTransfers(ErrataType.INSERT, 566);
         assertErrataTransfers(ErrataType.DELETE, 6);
         assertThat(contractResultRepository.count()).isEqualTo(13L);
+        assertThat(entityRepository.count()).isZero();
+        assertThat(findHistory(Entity.class)).isEmpty();
         assertThat(tokenTransferRepository.count()).isEqualTo(24L);
+
+        assertThat(entityProperties.getPersist().isEntityHistory()).isTrue();
+        assertThat(entityProperties.getPersist().isTrackBalance()).isTrue();
     }
 
     @Test
@@ -190,6 +214,9 @@ public class ErrataMigrationTest extends IntegrationTest {
                 .persist();
         errataMigration.doMigrate();
         assertThat(tokenTransferRepository.count()).isEqualTo(24L);
+
+        assertThat(entityProperties.getPersist().isEntityHistory()).isTrue();
+        assertThat(entityProperties.getPersist().isTrackBalance()).isTrue();
     }
 
     @Test
@@ -221,7 +248,7 @@ public class ErrataMigrationTest extends IntegrationTest {
 
     @Test
     void onEndNotMainnet() {
-        mirrorProperties.setNetwork(MirrorProperties.HederaNetwork.TESTNET);
+        importerProperties.setNetwork(ImporterProperties.HederaNetwork.TESTNET);
         AccountBalanceFile accountBalanceFile = new AccountBalanceFile();
         accountBalanceFile.setConsensusTimestamp(BAD_TIMESTAMP1);
         errataMigration.onStart(); // Call to increase test coverage of no-op methods

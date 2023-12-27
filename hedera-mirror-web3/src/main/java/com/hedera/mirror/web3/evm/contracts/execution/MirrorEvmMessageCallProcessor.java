@@ -21,7 +21,7 @@ import static com.hedera.services.store.contracts.precompile.codec.DecodingFacad
 import static org.hyperledger.besu.evm.frame.ExceptionalHaltReason.INSUFFICIENT_GAS;
 import static org.hyperledger.besu.evm.frame.MessageFrame.State.EXCEPTIONAL_HALT;
 
-import com.hedera.mirror.web3.evm.config.PrecompilesHolder;
+import com.hedera.mirror.web3.evm.config.PrecompiledContractProvider;
 import com.hedera.mirror.web3.evm.store.contract.EntityAddressSequencer;
 import com.hedera.mirror.web3.evm.store.contract.HederaEvmStackedWorldStateUpdater;
 import com.hedera.node.app.service.evm.contracts.execution.HederaEvmMessageCallProcessor;
@@ -34,7 +34,6 @@ import com.hederahashgraph.api.proto.java.AccountID;
 import com.hederahashgraph.api.proto.java.ResponseCodeEnum;
 import com.hederahashgraph.api.proto.java.Timestamp;
 import edu.umd.cs.findbugs.annotations.NonNull;
-import jakarta.inject.Named;
 import java.util.Optional;
 import org.hyperledger.besu.evm.EVM;
 import org.hyperledger.besu.evm.frame.ExceptionalHaltReason;
@@ -43,7 +42,6 @@ import org.hyperledger.besu.evm.precompile.MainnetPrecompiledContracts;
 import org.hyperledger.besu.evm.precompile.PrecompileContractRegistry;
 import org.hyperledger.besu.evm.tracing.OperationTracer;
 
-@Named
 public class MirrorEvmMessageCallProcessor extends HederaEvmMessageCallProcessor {
     private final AbstractAutoCreationLogic autoCreationLogic;
     private final EntityAddressSequencer entityAddressSequencer;
@@ -53,7 +51,7 @@ public class MirrorEvmMessageCallProcessor extends HederaEvmMessageCallProcessor
             final EntityAddressSequencer entityAddressSequencer,
             final EVM evm,
             final PrecompileContractRegistry precompiles,
-            final PrecompilesHolder precompilesHolder,
+            final PrecompiledContractProvider precompilesHolder,
             final GasCalculatorHederaV22 gasCalculator) {
         super(evm, precompiles, precompilesHolder.getHederaPrecompiles());
         this.autoCreationLogic = autoCreationLogic;

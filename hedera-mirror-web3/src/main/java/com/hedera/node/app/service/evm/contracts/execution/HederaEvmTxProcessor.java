@@ -72,7 +72,6 @@ public class HederaEvmTxProcessor {
         this.livePricesSource = livePricesSource;
         this.dynamicProperties = dynamicProperties;
         this.gasCalculator = gasCalculator;
-
         this.mcps = mcps;
         this.ccps = ccps;
         this.blockMetaSource = blockMetaSource;
@@ -80,8 +79,7 @@ public class HederaEvmTxProcessor {
     }
 
     /**
-     * Executes the {@link MessageFrame} of the EVM transaction and fills execution results into a
-     * field.
+     * Executes the {@link MessageFrame} of the EVM transaction and fills execution results into a field.
      *
      * @param sender The origin {@link MutableAccount} that initiates the transaction
      * @param receiver the priority form of the receiving {@link Address} (i.e., EIP-1014 if
@@ -204,7 +202,7 @@ public class HederaEvmTxProcessor {
         executor.process(frame, operationTracer);
     }
 
-    private AbstractMessageProcessor getMessageProcessor(final MessageFrame.Type type, final String evmVersion) {
+    private AbstractMessageProcessor getMessageProcessor(final MessageFrame.Type type, String evmVersion) {
         return switch (type) {
             case MESSAGE_CALL -> mcps.get(evmVersion).get();
             case CONTRACT_CREATION -> ccps.get(evmVersion).get();
