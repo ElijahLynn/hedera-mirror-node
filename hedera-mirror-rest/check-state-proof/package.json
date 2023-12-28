@@ -3,7 +3,7 @@
   "version": "0.96.0-SNAPSHOT",
   "description": "An example implementation of a state proof flow for a transaction utilizing the mirror node.",
   "engines": {
-    "node": ">=16.13.0 < 21"
+    "node": ">=16.13.0 < 22"
   },
   "type": "module",
   "main": "index.js",
