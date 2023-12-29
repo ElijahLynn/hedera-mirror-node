@@ -114,7 +114,7 @@ public class CallFeature extends AbstractFeature {
         address1 = new BigInteger(address1, 16).toString(16);
         address2 = new BigInteger(address2, 16).toString(16);
 
-        return new String[] {address1, address2};
+        return new String[]{address1, address2};
     }
 
     @RetryAsserts
@@ -138,17 +138,14 @@ public class CallFeature extends AbstractFeature {
     @Given("I successfully create EstimateGas contract")
     public void createNewEstimateTestContract() throws IOException {
         deployedEstimatePrecompileContract = getContract(ESTIMATE_GAS);
-        estimateContractAddress =
-                deployedEstimatePrecompileContract.contractId().toSolidityAddress();
+        estimateContractAddress = deployedEstimatePrecompileContract.contractId().toSolidityAddress();
         admin = tokenClient.getSdkClient().getExpandedOperatorAccountId();
         receiverAccountId = accountClient.getAccount(AccountNameEnum.ALICE);
         secondReceiverAccount = accountClient.getAccount(AccountNameEnum.BOB);
         thirdReceiver = accountClient.getAccount(AccountNameEnum.DAVE);
-        secondReceiverAlias =
-                secondReceiverAccount.getPublicKey().toEvmAddress().toString();
+        secondReceiverAlias = secondReceiverAccount.getPublicKey().toEvmAddress().toString();
         fungibleTokenId = tokenClient.getToken(FUNGIBLE_FOR_ETH_CALL).tokenId();
-        fungibleKycUnfrozenTokenId =
-                tokenClient.getToken(FUNGIBLE_KYC_UNFROZEN_FOR_ETH_CALL).tokenId();
+        fungibleKycUnfrozenTokenId = tokenClient.getToken(FUNGIBLE_KYC_UNFROZEN_FOR_ETH_CALL).tokenId();
         nonFungibleTokenId = tokenClient.getToken(NFT_FOR_ETH_CALL).tokenId();
     }
 
@@ -204,7 +201,8 @@ public class CallFeature extends AbstractFeature {
     public void associatePrecompileWithTokens() throws InvalidProtocolBufferException {
         // In order to execute Approve, approveNFT, ercApprove we need to associate the contract with the token
         tokenClient.associate(deployedPrecompileContract.contractId(), fungibleTokenId);
-        networkTransactionResponse = tokenClient.associate(deployedPrecompileContract.contractId(), nonFungibleTokenId);
+        networkTransactionResponse = tokenClient.associate(deployedPrecompileContract.contractId(),
+                nonFungibleTokenId);
     }
 
     @And("I associate FUNGIBLE_KYC_UNFROZEN token to receiver account")
@@ -216,10 +214,7 @@ public class CallFeature extends AbstractFeature {
     public void approveAndTransferNftToPrecompileContract() throws InvalidProtocolBufferException {
         accountClient.approveNftAllSerials(nonFungibleTokenId, deployedPrecompileContract.contractId());
         networkTransactionResponse = tokenClient.transferNonFungibleToken(
-                nonFungibleTokenId,
-                receiverAccountId,
-                AccountId.fromString(precompileContractAddress),
-                List.of(1L),
+                nonFungibleTokenId, receiverAccountId, AccountId.fromString(precompileContractAddress), List.of(1L),
                 null);
     }
 
@@ -415,11 +410,9 @@ public class CallFeature extends AbstractFeature {
         var results = response.getResultAsListDecimal();
         assertThat(results).isNotNull().hasSize(4);
 
-        assertThat(intValue(results.get(0)) + 1)
-                .as("BalanceBefore + amount = balanceAfter")
+        assertThat(intValue(results.get(0)) + 1).as("BalanceBefore + amount = balanceAfter")
                 .isEqualTo(intValue(results.get(1)));
-        assertThat(intValue(results.get(2)) + 1L)
-                .as("totalSupplyBefore + amount = totalSupplyAfter")
+        assertThat(intValue(results.get(2)) + 1L).as("totalSupplyBefore + amount = totalSupplyAfter")
                 .isEqualTo(intValue(results.get(3)));
     }
 
@@ -440,11 +433,9 @@ public class CallFeature extends AbstractFeature {
         var results = response.getResultAsListDecimal();
         assertThat(results).isNotNull().hasSize(4);
 
-        assertThat(intValue(results.get(0)) + 1)
-                .as("BalanceBefore + amount = balanceAfter")
+        assertThat(intValue(results.get(0)) + 1).as("BalanceBefore + amount = balanceAfter")
                 .isEqualTo(intValue(results.get(1)));
-        assertThat(intValue(results.get(2)) + 1)
-                .as("totalSupplyBefore + amount = totaSupplyAfter")
+        assertThat(intValue(results.get(2)) + 1).as("totalSupplyBefore + amount = totaSupplyAfter")
                 .isEqualTo(intValue(results.get(3)));
     }
 
@@ -462,11 +453,9 @@ public class CallFeature extends AbstractFeature {
         var results = response.getResultAsListDecimal();
         assertThat(results).isNotNull().hasSize(4);
 
-        assertThat(intValue(intValue(results.get(0)) - 1L))
-                .as("BalanceBefore - amount = balanceAfter")
+        assertThat(intValue(intValue(results.get(0)) - 1L)).as("BalanceBefore - amount = balanceAfter")
                 .isEqualTo(intValue(results.get(1)));
-        assertThat(intValue(intValue(results.get(2)) - 1L))
-                .as("totalSupplyBefore - amount = totalSupplyAfter")
+        assertThat(intValue(intValue(results.get(2)) - 1L)).as("totalSupplyBefore - amount = totalSupplyAfter")
                 .isEqualTo(intValue(results.get(3)));
     }
 
@@ -484,11 +473,9 @@ public class CallFeature extends AbstractFeature {
         var results = response.getResultAsListDecimal();
         assertThat(results).isNotNull().hasSize(4);
 
-        assertThat(intValue(results.get(0)) - 1)
-                .as("BalanceBefore - amount = balanceAfter")
+        assertThat(intValue(results.get(0)) - 1).as("BalanceBefore - amount = balanceAfter")
                 .isEqualTo(intValue(results.get(1)));
-        assertThat(intValue(results.get(2)) - 1)
-                .as("totalSupplyBefore - amount = totalSupplyAfter")
+        assertThat(intValue(results.get(2)) - 1).as("totalSupplyBefore - amount = totalSupplyAfter")
                 .isEqualTo(intValue(results.get(3)));
     }
 
@@ -506,11 +493,9 @@ public class CallFeature extends AbstractFeature {
         var results = response.getResultAsListDecimal();
         assertThat(results).isNotNull().hasSize(4);
 
-        assertThat(intValue(intValue(results.get(0)) - 1L))
-                .as("BalanceBefore - amount = balanceAfter")
+        assertThat(intValue(intValue(results.get(0)) - 1L)).as("BalanceBefore - amount = balanceAfter")
                 .isEqualTo(intValue(results.get(1)));
-        assertThat(intValue(intValue(results.get(2)) - 1L))
-                .as("totalSupplyBefore - amount = totaSupplyAfter")
+        assertThat(intValue(intValue(results.get(2)) - 1L)).as("totalSupplyBefore - amount = totaSupplyAfter")
                 .isEqualTo(intValue(results.get(3)));
     }
 
@@ -528,11 +513,9 @@ public class CallFeature extends AbstractFeature {
         var results = response.getResultAsListDecimal();
         assertThat(results).isNotNull().hasSize(4);
 
-        assertThat(intValue(results.get(0)) - 1)
-                .as("BalanceBefore - amount = balanceAfter")
+        assertThat(intValue(results.get(0)) - 1).as("BalanceBefore - amount = balanceAfter")
                 .isEqualTo(intValue(results.get(1)));
-        assertThat(intValue(results.get(2)) - 1)
-                .as("totalSupplyBefore - amount = totalSupplyAfter")
+        assertThat(intValue(results.get(2)) - 1).as("totalSupplyBefore - amount = totalSupplyAfter")
                 .isEqualTo(intValue(results.get(3)));
     }
 
@@ -546,12 +529,8 @@ public class CallFeature extends AbstractFeature {
         var statusAfterPause = response.getResult().substring(2, 66);
         var statusAfterUnpause = response.getResult().substring(66);
 
-        assertThat(Integer.valueOf(statusAfterPause, 16))
-                .as("isPaused after pause is true")
-                .isEqualTo(1);
-        assertThat(Integer.valueOf(statusAfterUnpause, 16))
-                .as("isPaused after unpause is false")
-                .isZero();
+        assertThat(Integer.valueOf(statusAfterPause, 16)).as("isPaused after pause is true").isEqualTo(1);
+        assertThat(Integer.valueOf(statusAfterUnpause, 16)).as("isPaused after unpause is false").isZero();
     }
 
     @Then("I freeze {string} token, unfreeze and get status")
@@ -564,12 +543,8 @@ public class CallFeature extends AbstractFeature {
         var statusAfterFreeze = response.getResult().substring(2, 66);
         var statusAfterUnfreeze = response.getResult().substring(66);
 
-        assertThat(Integer.valueOf(statusAfterFreeze, 16))
-                .as("isFreezed after freeze is true")
-                .isEqualTo(1);
-        assertThat(Integer.valueOf(statusAfterUnfreeze, 16))
-                .as("isFreezed after unfreeze is false")
-                .isZero();
+        assertThat(Integer.valueOf(statusAfterFreeze, 16)).as("isFreezed after freeze is true").isEqualTo(1);
+        assertThat(Integer.valueOf(statusAfterUnfreeze, 16)).as("isFreezed after unfreeze is false").isZero();
     }
 
     @Then("I approve a FUNGIBLE token and get allowance")
@@ -585,9 +560,7 @@ public class CallFeature extends AbstractFeature {
         var response = callContract(data, precompileContractAddress);
         var allowance = response.getResult().substring(2, 66);
 
-        assertThat(new BigInteger(allowance))
-                .as("allowance should equal amount")
-                .isEqualTo(BigInteger.valueOf(1L));
+        assertThat(new BigInteger(allowance)).as("allowance should equal amount").isEqualTo(BigInteger.valueOf(1L));
     }
 
     @Then("I approve a NFT token and get allowance")
@@ -602,8 +575,7 @@ public class CallFeature extends AbstractFeature {
         var response = callContract(data, precompileContractAddress);
         var approvedAddress = response.getResult().substring(66);
 
-        assertThat(approvedAddress)
-                .as("approved address should equal the spender")
+        assertThat(approvedAddress).as("approved address should equal the spender")
                 .isEqualTo(to32BytesString(receiverAccountId.getAccountId().toSolidityAddress()));
     }
 
@@ -621,11 +593,10 @@ public class CallFeature extends AbstractFeature {
         var statusAfterAssociate = response.getResultAsListDecimal().get(0);
         var statusAfterDissociate = response.getResultAsListDecimal().get(1);
 
-        assertThat(statusAfterAssociate)
-                .as("transfer after associate should pass -> response code 22 equals SUCCESS")
+        assertThat(statusAfterAssociate).as("transfer after associate should pass -> response code 22 equals SUCCESS")
                 .isEqualTo(22);
-        assertThat(statusAfterDissociate)
-                .as("transfer after dissociate should fail > response code 184 equals to owner does not own the token")
+        assertThat(statusAfterDissociate).as(
+                        "transfer after dissociate should fail > response code 184 equals to owner does not own the token")
                 .isEqualTo(184);
     }
 
@@ -643,11 +614,10 @@ public class CallFeature extends AbstractFeature {
         var statusAfterAssociate = response.getResultAsListDecimal().get(0);
         var statusAfterDissociate = response.getResultAsListDecimal().get(1);
 
-        assertThat(statusAfterAssociate)
-                .as("transfer after associate should pass -> response code 22 equals SUCCESS")
+        assertThat(statusAfterAssociate).as("transfer after associate should pass -> response code 22 equals SUCCESS")
                 .isEqualTo(22);
-        assertThat(statusAfterDissociate)
-                .as("transfer after dissociate should fail -> response code 237 equals to owner does not own the NFT")
+        assertThat(statusAfterDissociate).as(
+                        "transfer after dissociate should fail -> response code 237 equals to owner does not own the NFT")
                 .isEqualTo(184);
     }
 
@@ -666,15 +636,10 @@ public class CallFeature extends AbstractFeature {
         var results = response.getResultAsListDecimal();
         assertThat(results).isNotNull().hasSize(4);
 
-        assertThat(intValue(results.get(0)))
-                .as("allowance before transfer should equal the amount")
-                .isZero();
-        assertThat(intValue(results.get(1)) + 1)
-                .as("balance before + amount should equal the balance after")
+        assertThat(intValue(results.get(0))).as("allowance before transfer should equal the amount").isZero();
+        assertThat(intValue(results.get(1)) + 1).as("balance before + amount should equal the balance after")
                 .isEqualTo(intValue(results.get(3)));
-        assertThat(intValue(results.get(2)))
-                .as("allowance after transfer should be 0")
-                .isZero();
+        assertThat(intValue(results.get(2))).as("allowance after transfer should be 0").isZero();
     }
 
     @Then("I approve a NFT token and transfer it")
@@ -689,14 +654,11 @@ public class CallFeature extends AbstractFeature {
         var results = response.getResultAsListAddress();
         assertThat(results).isNotNull().hasSize(4);
 
-        assertThat(results.get(0))
-                .as("allowed address before transfer should be the receiverAccount")
+        assertThat(results.get(0)).as("allowed address before transfer should be the receiverAccount")
                 .isEqualTo(results.get(3));
-        assertThat(results.get(1))
-                .as("owner after transfer should be the Precompile")
+        assertThat(results.get(1)).as("owner after transfer should be the Precompile")
                 .isEqualTo(to32BytesString(results.get(1)));
-        assertThat(results.get(2))
-                .as("allowance after transfer should be 0")
+        assertThat(results.get(2)).as("allowance after transfer should be 0")
                 .isEqualTo("0000000000000000000000000000000000000000000000000000000000000000");
     }
 
@@ -717,11 +679,8 @@ public class CallFeature extends AbstractFeature {
         assertThat(results.get(0)).as("isKYC after grant should be true").isEqualTo(1);
         assertThat(results.get(1)).as("KYC grant status should be SUCCESS = 22").isEqualTo(22);
         assertThat(results.get(2)).as("isKYC after revoke should be false").isZero();
-        assertThat(results.get(3))
-                .as("KYC revoke status should be SUCCESS = 22")
-                .isEqualTo(22);
-        assertThat(results.get(4))
-                .as("transfer status after kyc revert should be failing with KYC should be granted")
+        assertThat(results.get(3)).as("KYC revoke status should be SUCCESS = 22").isEqualTo(22);
+        assertThat(results.get(4)).as("transfer status after kyc revert should be failing with KYC should be granted")
                 .isEqualTo(176);
     }
 
