@@ -25,4 +25,4 @@ RUN apt-get update && \
 USER node
 
 # Run
-ENTRYPOINT ["node", "--experimental-specifier-resolution=node", "server.js"]
+ENTRYPOINT ["node", "--import=extensionless/register","--experimental-specifier-resolution=node", "server.js"]
